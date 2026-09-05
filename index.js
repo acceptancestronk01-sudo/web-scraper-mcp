@@ -1,4 +1,6 @@
 import express from 'express';
+import { createPaymentMiddleware } from './payment-verification.js';
+
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import TurndownService from 'turndown';
@@ -24,6 +26,10 @@ const PAYMENT_CONFIG = {
   chainId: 'eip155:8453',
   payTo: '0xf081ee84c0d85278a6242bc265f0b312021ebeb1'
 };
+
+// X402 Payment Verification Middleware
+const verifyPayment = createPaymentMiddleware(PAYMENT_CONFIG);
+
 
 // Root landing page
 app.get('/', (req, res) => {
@@ -239,7 +245,7 @@ app.get('/.well-known/x402', (req, res) => {
     payment: {
       scheme: 'exact',
       network: PAYMENT_CONFIG.chainId,
-      price: `$${PAYMENT_CONFIG.price}`,
+      price: '$' + PAYMENT_CONFIG.price,
       currency: PAYMENT_CONFIG.currency,
       payTo: PAYMENT_CONFIG.payTo
     },
@@ -348,22 +354,14 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     payment: {
       enabled: true,
-      price: `$${PAYMENT_CONFIG.price}`,
+      price: '$' + PAYMENT_CONFIG.price,
       currency: PAYMENT_CONFIG.currency,
       network: PAYMENT_CONFIG.chainId
     }
   });
 });
 
-// Payment required response helper
-function paymentRequired(res) {
-  return res.status(402).json({
-    error: 'Payment Required',
-    message: 'This endpoint requires x402 payment',
-    payment: {
-      scheme: 'exact',
-      network: PAYMENT_CONFIG.chainId,
-      price: `$${PAYMENT_CONFIG.price}`,
+`,
       currency: PAYMENT_CONFIG.currency,
       payTo: PAYMENT_CONFIG.payTo
     },
@@ -388,12 +386,8 @@ async function fetchHTML(url) {
 }
 
 // Web scraping endpoint with payment requirement
-app.get('/api/scrape', async (req, res) => {
-  const paymentProof = req.headers['payment-signature'] || req.headers['x-payment'];
-
-  if (!paymentProof) {
-    return paymentRequired(res);
-  }
+app.get('/api/scrape', verifyPayment, async (req, res) => {
+  // Payment already verified by middleware
 
   const { url, format = 'markdown' } = req.query;
 
@@ -484,12 +478,8 @@ app.get('/api/scrape', async (req, res) => {
 });
 
 // Extract specific elements endpoint with payment requirement
-app.get('/api/extract', async (req, res) => {
-  const paymentProof = req.headers['payment-signature'] || req.headers['x-payment'];
-
-  if (!paymentProof) {
-    return paymentRequired(res);
-  }
+app.get('/api/extract', verifyPayment, async (req, res) => {
+  // Payment already verified by middleware
 
   const { url, selector } = req.query;
 
@@ -552,12 +542,8 @@ app.get('/api/extract', async (req, res) => {
 });
 
 // Metadata extraction endpoint with payment requirement
-app.get('/api/metadata', async (req, res) => {
-  const paymentProof = req.headers['payment-signature'] || req.headers['x-payment'];
-
-  if (!paymentProof) {
-    return paymentRequired(res);
-  }
+app.get('/api/metadata', verifyPayment, async (req, res) => {
+  // Payment already verified by middleware
 
   const { url } = req.query;
 
