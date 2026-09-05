@@ -367,7 +367,7 @@ function paymentRequired(res) {
       currency: PAYMENT_CONFIG.currency,
       payTo: PAYMENT_CONFIG.payTo
     },
-    instructions: 'Include payment proof in X-Payment-Proof header'
+    instructions: 'Include payment signature in PAYMENT-SIGNATURE header (x402 v2) or X-PAYMENT header (x402 v1)'
   });
 }
 
@@ -389,7 +389,7 @@ async function fetchHTML(url) {
 
 // Web scraping endpoint with payment requirement
 app.get('/api/scrape', async (req, res) => {
-  const paymentProof = req.headers['x-payment-proof'];
+  const paymentProof = req.headers['payment-signature'] || req.headers['x-payment'];
 
   if (!paymentProof) {
     return paymentRequired(res);
@@ -485,7 +485,7 @@ app.get('/api/scrape', async (req, res) => {
 
 // Extract specific elements endpoint with payment requirement
 app.get('/api/extract', async (req, res) => {
-  const paymentProof = req.headers['x-payment-proof'];
+  const paymentProof = req.headers['payment-signature'] || req.headers['x-payment'];
 
   if (!paymentProof) {
     return paymentRequired(res);
@@ -553,7 +553,7 @@ app.get('/api/extract', async (req, res) => {
 
 // Metadata extraction endpoint with payment requirement
 app.get('/api/metadata', async (req, res) => {
-  const paymentProof = req.headers['x-payment-proof'];
+  const paymentProof = req.headers['payment-signature'] || req.headers['x-payment'];
 
   if (!paymentProof) {
     return paymentRequired(res);
